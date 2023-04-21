@@ -1,0 +1,57 @@
+{% extends 'shop/layouts/main.html' %} {% block title %} Users {% endblock title %} {% block content %}
+<div class="container" style="margin-top: 70px; min-height: 100vh">
+    <div class="row">
+        <div class="col-md-12">
+            <h4 class="d-flex justify-content-between"><span><i class="fa fa-comments"></i> Live Chat</span> <small class="text-muted">Welcome {{request.user.first_name}} {{request.user.last_name}}</small></h4>
+            <p>{% if request.user.is_staff == True %} Customer {% else %} Vendor {% endif %} List</p>
+            <div class="chat-container col-md-6">
+
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+getNotification();
+ setInterval(getNotification, 5000)
+    function getNotification(){
+    const chat_container=document.querySelector('.chat-container');
+    chat_container.innerHTML="";
+      let url = "{% url 'getUserDetails' %}"
+      fetch(url)
+      .then(res=>res.json())
+      .then(datas=>{
+        console.log(datas);
+        //console.log(datas.length);
+        datas.forEach(function(data){
+            const link=document.createElement('a');
+            link.href='viewChat/'+data.id;
+            const chat=document.createElement('div');
+            chat.classList.add('user');
+
+            const name=document.createElement('div');
+            name.classList.add('name');
+            name.innerHTML=`<i></i> ${data.first_name} ${data.last_name}`;
+            chat.appendChild(name);
+            const i=name.querySelector('i');
+               if(data.status=='online'){
+
+                i.classList.add('fa','fa-circle','online');
+               }else{
+                 i.classList.add('fa','fa-circle','offline');
+               }
+
+            if(Number(data.msg)>0){
+                const msg=document.createElement('div');
+                msg.innerHTML=data.msg;
+                msg.classList.add('msg-bubble');
+                chat.appendChild(msg);
+              }
+             link.appendChild(chat);
+
+            chat_container.appendChild(link);
+        });
+      })
+      .catch(error => console.log(error))
+    }
+</script>
+{% endblock content %}
