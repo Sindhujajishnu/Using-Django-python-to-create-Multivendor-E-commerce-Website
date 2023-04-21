@@ -1,0 +1,179 @@
+{% extends 'shop/layouts/main.html' %} {% block title %} Live Chat {% endblock title %} {% block content %}
+<div class="container" style="margin-top: 70px; min-height: 100vh">
+    <div class="row">
+        <div class="col-md-12">
+            <h4><i class="fa fa-comments"></i>
+                {% if user_details.is_staff == True  %}
+                    Vendor
+                {% else  %}
+                    Customer
+                {%endif%}
+                <b class="text-primary">{{user_details.first_name}} {{user_details.last_name}}</b></h4>
+            <div class="chat-box">
+ <div class="chat">
+  <div class="chat-head">
+    <div class="vender-name">{{user_details.first_name}} {{user_details.last_name}}</div>
+  </div>
+<div class="chat-body">
+      {% for message in messages %}
+{% if user_details.id == message.msg_sender.id %}
+  <p class="vendor-msg">{{message.body}}</p>
+    {% else %}
+      <p class="user-msg">{{message.body}}</p>
+    {% endif%}
+    {% endfor %}
+</div>
+      <form action="" id="myform" method="POST">
+            {% csrf_token %}
+<div class="chat-input">
+   {{form.body}}
+  <button type = "submit"  id="btnSend"><i class="fa fa-send"></i></button>
+</div>
+            </form>
+ </div>
+</div>
+        </div>
+    </div>
+</div>
+<script>
+
+  function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+let form = document.getElementById("myform");
+form.addEventListener("submit", btnSendMessage);
+ let chatTextBox= document.getElementById("id_body");
+chatTextBox.addEventListener("keydown", submitMessage);
+function submitMessage(e){
+  if(e.keyCode==13){
+    e.preventDefault();
+  sendChat();
+  }
+}
+function btnSendMessage(e){
+   e.preventDefault();
+   sendChat();
+}
+
+
+
+function sendChat() {
+    let chatMessage = document.getElementById("id_body").value
+    console.log(chatMessage)
+    if(chatMessage.trim()==""){
+    alert("Enter Message to send");
+    return;
+    }
+    const data = {
+        msg: chatMessage
+    };
+
+    let url = "{% url 'sent_msg' user_details.id %}"
+    fetch(url, {
+            method: 'POST', // or 'PUT'
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            document.getElementById("id_body").value="";
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
+
+}
+
+const myDiv = document.getElementsByClassName("chat-body")[0];
+
+function scrollToBottom() {
+console.log(myDiv);
+  myDiv.scrollTop = myDiv.scrollHeight;
+}
+myDiv.addEventListener("DOMNodeInserted", scrollToBottom);
+
+let counter = {{num}}
+getMessages();
+ setInterval(getMessages, 3000)
+    function getMessages(){
+    const chat_container=document.querySelector('.chat-body');
+    //chat_container.innerHTML="";
+    let url = "{% url 'getMessages' user_details.id %}"
+
+
+      fetch(url)
+      .then(res=>res.json())
+      .then(messages=>{
+       // console.log(messages);
+        //console.log(messages.length);
+        /*
+        messages.forEach(function(message){
+            const p=document.createElement('p');
+            let user_details_id={{user_details.id}}
+            if(user_details_id==message.msg_sender){
+                p.classList.add('vendor-msg');
+            }else{
+              p.classList.add('user-msg');
+            }
+
+            p.textContent=message.msg;
+            chat_container.appendChild(p);
+        });
+        */
+           if(messages.length == 0){}
+        else{
+
+            let lastMsg = messages[messages.length-1]
+
+            if(counter == messages.length){
+                console.log("there is no new chat")
+            }
+            else{
+
+
+                 const p=document.createElement('p');
+            let user_details_id={{user_details.id}}
+            if(user_details_id==lastMsg.msg_sender){
+                p.classList.add('vendor-msg');
+            }else{
+              p.classList.add('user-msg');
+            }
+
+            p.textContent=lastMsg.msg;
+            chat_container.appendChild(p);
+
+
+            }
+
+        }
+
+        counter = messages.length;
+
+
+
+      })
+      .catch(error => console.log(error))
+
+    }
+
+
+</script>
+{% endblock content %}
